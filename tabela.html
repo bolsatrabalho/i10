@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>Frequência de Bolsistas</title>
+
+<style>
+body {
+  font-family: Arial, sans-serif;
+  background:#f4f4f4;
+  padding:20px;
+}
+
+h2 {
+  text-align:center;
+}
+
+table {
+  width:100%;
+  border-collapse:collapse;
+  background:#fff;
+}
+
+th, td {
+  border:1px solid #ccc;
+  padding:6px;
+  text-align:center;
+  font-size:12px;
+}
+
+th {
+  background:#eee;
+}
+
+select, input[type="text"] {
+  width:100%;
+}
+
+button {
+  padding:5px 8px;
+  cursor:pointer;
+}
+
+#areaAdmin {
+  margin-bottom:15px;
+  background:#fff;
+  padding:10px;
+  border:1px solid #ccc;
+}
+</style>
+</head>
+
+<body>
+
+<h2>Frequência de Bolsistas</h2>
+
+<!-- ÁREA DO ADMIN -->
+<div id="areaAdmin" style="display:none;">
+  <strong>Área do Administrador</strong><br><br>
+  <button onclick="alert('Adicionar bolsista (próximo passo)')">Adicionar Bolsista</button>
+  <button onclick="alert('Vincular bolsista a coordenador (próximo passo)')">Vincular Bolsista</button>
+</div>
+
+<table>
+<thead>
+<tr>
+  <th>Matrícula</th>
+  <th>Nome</th>
+  <th>Setor</th>
+  <th>Jan</th><th>Fev</th><th>Mar</th><th>Abr</th>
+  <th>Mai</th><th>Jun</th><th>Jul</th><th>Ago</th>
+  <th>Set</th><th>Out</th><th>Nov</th><th>Dez</th>
+  <th>Ações</th>
+  <th id="colAdmin" style="display:none;">Admin</th>
+</tr>
+</thead>
+
+<tbody id="tbody"></tbody>
+</table>
+
+<script>
+/* ========= CONFIGURAÇÕES ========= */
+
+const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxZOYdKpvSBCt4sKsV0dMhI4D3yMokvvrR_htQbdK9GZo-5rvSFPJ-ryN7zkhwwx_DJxg/exec";
+const ADMIN_EMAIL = "bolsatrabalho@prex.uespi.br";
+
+/* ========= LOGIN ========= */
+
+const email = sessionStorage.getItem("coordenadorLogado");
+
+if(!email){
+  alert("Sessão expirada. Faça login novamente.");
+}else{
+  carregarDados();
+}
+
+/* ========= FUNÇÕES ========= */
+
+function carregarDados(){
+  fetch(`${SCRIPT_URL}?acao=listar&email=${encodeURIComponent(email)}`)
+    .then(r => r.json())
+    .then(dados => montarTabela(dados))
+    .catch(() => alert("Erro ao carregar dados do servidor"));
+}
+
+function montarTabela(lista){
+  const tbody = document.getElementById("tbody");
+  tbody.innerHTML = "";
+
+  const isAdmin = email.trim().toLowerCase() === ADMIN_EMAIL;
+
+  if(isAdmin){
+    document.getElementById("areaAdmin").style.display = "block";
+    document.getElementById("colAdmin").style.display = "table-cell";
+  }
+
+  lista.forEach(b => {
+
+    // MATRÍCULA (coluna C da planilha)
+    const matricula =
+      b.Matricula || b.matricula || b["Matrícula"] || "";
+
+    const tr = document.createElement("tr");
+
+    tr.innerHTML = `
+      <td>${matricula}</td>
+      <td>${b["Nome do bolsista"] || ""}</td>
+      <td>${b.Setor || ""}</td>
+
+      ${campoMes(b.Jan)}
+      ${campoMes(b.Fev)}
+      ${campoMes(b.Mar)}
+      ${campoMes(b.Abr)}
+      ${campoMes(b.Mai)}
+      ${campoMes(b.Jun)}
+      ${campoMes(b.Jul)}
+      ${campoMes(b.Ago)}
+      ${campoMes(b.Set)}
+      ${campoMes(b.Out)}
+      ${campoMes(b.Nov)}
+      ${campoMes(b.Dez)}
+
+      <td>
+        <input type="text" placeholder="Justificativa"><br>
+        <input type="file"><br>
+        <button onclick="enviar('${matricula}')">Enviar</button>
+      </td>
+
+      ${isAdmin ? `<td><button onclick="remover('${matricula}')">Remover</button></td>` : ""}
+    `;
+
+    tbody.appendChild(tr);
+  });
+}
+
+function campoMes(valor){
+  return `
+    <td>
+      <select>
+        <option value=""></option>
+        <option value="SIM" ${valor==="SIM"?"selected":""}>SIM</option>
+        <option value="NAO" ${valor==="NAO"?"selected":""}>NÃO</option>
+      </select>
+    </td>
+  `;
+}
+
+/* ========= AÇÕES ========= */
+
+function enviar(matricula){
+  alert("Envio funcionando (ligação com Apps Script será o próximo passo)");
+}
+
+function remover(matricula){
+  if(confirm("Tem certeza que deseja remover este bolsista?")){
+    alert("Remoção será feita pelo servidor");
+  }
+}
+</script>
+
+</body>
+</html>
